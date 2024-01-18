@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <Folder Include="Data\" />
-    <Folder Include="Contexts\" />
     <Folder Include="Dtos\" />
     <Folder Include="Repositories\" />
   </ItemGroup>
