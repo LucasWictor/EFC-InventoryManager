@@ -13,6 +13,6 @@ namespace Infrastructure.Entities
         [Required]
         public string Contactinfo { get; set; }
 
-        public List<ProductEntity> Products { get; set; }
+        public List<ProductEntity> Product { get; set; }
     }
 }
