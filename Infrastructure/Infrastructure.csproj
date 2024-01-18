@@ -9,7 +9,6 @@
   <ItemGroup>
     <Folder Include="Dtos\" />
     <Folder Include="Data\" />
-    <Folder Include="Repositories\" />
   </ItemGroup>
 
   <ItemGroup>
