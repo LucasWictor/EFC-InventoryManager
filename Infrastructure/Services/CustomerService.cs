@@ -1,5 +1,7 @@
 ﻿using Infrastructure.Entities;
 using Infrastructure.Repositories;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Infrastructure.Services
 {
@@ -12,21 +14,29 @@ namespace Infrastructure.Services
             _customerRepository = customerRepository;
         }
 
-        public async Task<CustomerEntity> CreateCustomerAsync(CustomerEntity customer)
-
+        public async Task<IEnumerable<CustomerEntity>> GetAllCustomersAsync()
         {
-            //might add additional business logic here before creating the customer
-            return await _customerRepository.CreateAsync(customer);
+            return await _customerRepository.GetAllCustomersAsync();
         }
 
-        public async Task<CustomerEntity> GetCustomerByIdAsync(int customerId)
+        public async Task<CustomerEntity> GetCustomerByIdAsync(int id)
         {
-            return await _customerRepository.GetOneAsync(c => c.CustomerId == customerId);
+            return await _customerRepository.GetOneAsync(c => c.CustomerId == id);
+        }
+
+        public async Task<CustomerEntity> CreateCustomerAsync(CustomerEntity customer)
+        {
+            return await _customerRepository.CreateAsync(customer);
         }
 
         public async Task<bool> UpdateCustomerAsync(CustomerEntity customer)
         {
-            return await _customerRepository.UpdateAsync(customer);
+            return await _customerRepository.UpdateCustomerAsync(customer);
+        }
+
+        public async Task<bool> DeleteCustomerAsync(int customerId)
+        {
+            return await _customerRepository.DeleteCustomerAsync(customerId);
         }
     }
 }

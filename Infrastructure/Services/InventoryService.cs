@@ -14,7 +14,7 @@ namespace Infrastructure.Services
             _productRepository = productRepository;
         }
 
-        // //Have to include logic to check if a product already exists before adding product
+        // Add method to include logic to check if a product already exists before adding product
         public async Task<ProductEntity> AddProductAsync(ProductEntity product)
         {
             return await _productRepository.CreateAsync(product);

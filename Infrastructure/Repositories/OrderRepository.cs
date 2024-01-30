@@ -1,11 +1,12 @@
-﻿using Infrastructure.Entities;
+﻿using Infrastructure.Contexts;
+using Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
     public class OrderRepository : BaseRepository<OrderEntity>
     {
-        public OrderRepository(DbContext context) : base(context)
+        public OrderRepository(DataContext context) : base(context)
         {
         }
 

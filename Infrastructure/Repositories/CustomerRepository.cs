@@ -1,4 +1,5 @@
-﻿using Infrastructure.Entities;
+﻿using Infrastructure.Contexts;
+using Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -10,8 +11,8 @@ namespace Infrastructure.Repositories
 {
     public class CustomerRepository : BaseRepository<CustomerEntity>
     {
-        public CustomerRepository(DbContext context ) : base(context)
-        { 
+        public CustomerRepository(DataContext context) : base(context)
+        {
         }
 
         //Retrive customers by email 
@@ -39,8 +40,37 @@ namespace Infrastructure.Repositories
                                  .Where(c => c.FirstName == firstName && c.LastName == lastName)
                                  .ToListAsync();
         }
+        // Retrieve all customers
+        public async Task<IEnumerable<CustomerEntity>> GetAllCustomersAsync()
+        {
+            return await _context.Set<CustomerEntity>().ToListAsync();
+        }
 
-
+        // Update an existing customer
+        public async Task<bool> UpdateCustomerAsync(CustomerEntity customer)
+        {
+            var existingCustomer = await _context.Set<CustomerEntity>().FindAsync(customer.CustomerId);
+            if (existingCustomer != null)
+            {
+                // Map updated values onto existing customer entity or attach and mark as modified
+                _context.Entry(existingCustomer).CurrentValues.SetValues(customer);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
+        // Delete a customer by ID
+        public async Task<bool> DeleteCustomerAsync(int customerId)
+        {
+            var customer = await _context.Set<CustomerEntity>().FindAsync(customerId);
+            if (customer != null)
+            {
+                _context.Set<CustomerEntity>().Remove(customer);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            return false;
+        }
         //Get all orders for specific customer
         public async Task<IEnumerable<OrderEntity>> GetCustomerOrdersAsync(int customerId)
         {

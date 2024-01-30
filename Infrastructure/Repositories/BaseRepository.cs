@@ -1,4 +1,5 @@
 ﻿
+using Infrastructure.Contexts;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Diagnostics;
@@ -8,9 +9,9 @@ namespace Infrastructure.Repositories
 {
     public abstract class BaseRepository<TEntity> where TEntity : class
     {
-        protected readonly DbContext _context;
+        protected readonly DataContext _context;
 
-        public BaseRepository(DbContext context) 
+        protected BaseRepository(DataContext context)
         {
             _context = context;
         }

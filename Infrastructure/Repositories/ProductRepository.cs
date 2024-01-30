@@ -1,11 +1,12 @@
-﻿using Infrastructure.Entities;
+﻿using Infrastructure.Contexts;
+using Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Repositories
 {
     public class ProductRepository : BaseRepository<ProductEntity>
     {
-        public ProductRepository(DbContext context) : base(context)
+        public ProductRepository(DataContext context) : base(context)
         {
         }
 

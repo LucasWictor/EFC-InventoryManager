@@ -1,4 +1,5 @@
-﻿using Infrastructure.Entities;
+﻿using Infrastructure.Contexts;
+using Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace Infrastructure.Repositories
 {
     public class OrderDetailRepository : BaseRepository<OrderDetailEntity>
     {
-        public OrderDetailRepository(DbContext context) : base(context)
+        public OrderDetailRepository(DataContext context) : base(context)
         {
         }
 
