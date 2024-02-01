@@ -18,6 +18,7 @@ namespace Infrastructure.Repositories
                                  .ToListAsync();
         }
 
+
         // Update the status of an order
         public async Task<bool> UpdateOrderStatusAsync(int orderId, string newStatus)
         {
@@ -39,5 +40,14 @@ namespace Infrastructure.Repositories
                                  .FirstOrDefaultAsync(o => o.OrderId == orderId);
         }
 
+        // GET ALL ORDERS
+        public async Task<IEnumerable<OrderEntity>> GetAllOrdersAsync()
+        {
+            return await _context.Order
+                .Include(o => o.Customer)
+                .Include(o => o.OrderDetails)
+                .ToListAsync();
+        }
     }
+
 }

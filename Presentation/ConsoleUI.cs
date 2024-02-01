@@ -78,7 +78,7 @@ namespace Console.UI
                         await UpdateCustomerAsync();
                         break;
                     case "Delete Customer":
-                        // Implementation needed
+                        await DeleteCustomerAsync();
                         break;
                     case "Return to Main Menu":
                         keepManagingCustomers = false;
@@ -147,8 +147,8 @@ namespace Console.UI
             System.Console.ReadKey();
         }
 
-        // have to implement UpdateCustomerAsync, DeleteCustomerAsync etc.
-
+   
+        // UPDATE CUSTOMER
         private async Task UpdateCustomerAsync()
         {
             var customers = await _customerService.GetAllCustomersAsync();
@@ -167,11 +167,11 @@ namespace Console.UI
             var firstName = AnsiConsole.Ask<string>($"Enter new first name (Current: {selectedCustomer.FirstName}):", selectedCustomer.FirstName);
             var lastName = AnsiConsole.Ask<string>($"Enter new last name (Current: {selectedCustomer.LastName}):", selectedCustomer.LastName);
             var email = AnsiConsole.Ask<string>($"Enter new email (Current: {selectedCustomer.Email}):", selectedCustomer.Email);
-
+            // Might need more fields.
             selectedCustomer.FirstName = firstName;
             selectedCustomer.LastName = lastName;
             selectedCustomer.Email = email;
-
+            // Might need more fields.
             var success = await _customerService.UpdateCustomerAsync(selectedCustomer);
             if (success)
             {
@@ -185,8 +185,39 @@ namespace Console.UI
             AnsiConsole.MarkupLine("Press any key to continue...");
             System.Console.ReadKey();
         }
-    }
 
+        // DELETE CUSTOMER
+        private async Task DeleteCustomerAsync()
+        {
+            var customers = await _customerService.GetAllCustomersAsync();
+            AnsiConsole.Clear();
+
+            var CustomerDict = customers.ToDictionary(c => c.CustomerId.ToString(), c => $"{c.FirstName} {c.LastName}");
+            var CustomerId = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                .Title("Select a customer to delete:")
+                .PageSize(10)
+                .AddChoices(CustomerDict.Keys));
+
+            var confirm = AnsiConsole.Confirm($"Are you sure you want to delete this customer? This action cannot be undone.");
+            if (confirm)
+            {
+                var success = await _customerService.DeleteCustomerAsync(int.Parse(CustomerId));
+                if (success)
+                {
+                    AnsiConsole.MarkupLine("[green]Customer deleted successfully![/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[red]Failed to delete customer.[/]");
+                }
+            }
+            AnsiConsole.MarkupLine("Press any key to continue...");
+            System.Console.ReadKey();
+        }
+
+
+        //IF SELECT INVENTORY 
         private async Task ManageInventoryAsync()
         {
             var keepManagingInventory = true;
@@ -224,9 +255,72 @@ namespace Console.UI
             }
         }
 
+        //MANAGE ORDERS
+
         private async Task ManageOrdersAsync()
         {
-            // Implementation needed
+            var keepManagingOrders = true;
+            while (keepManagingOrders)
+            {
+                var orderAction = AnsiConsole.Prompt(
+                    new SelectionPrompt<string>()
+                        .Title("Order Management")
+                        .PageSize(10)
+                        .AddChoices(new[] {
+                    "List Orders",
+                    "Create Order",
+                    "Update Order Status",
+                    "Return to Main Menu" }));
+
+                switch (orderAction)
+                {
+                    case "List Orders":
+                        await ListOrdersAsync();
+                        break;
+                    case "Create Order":
+                        //implementation needed
+                        break;
+                    case "Update Order Status":
+                        //implementation needed
+                        break;
+                    case "Return to Main Menu":
+                        keepManagingOrders = false;
+                        break;
+                }
+            }
+        }
+
+        private async Task ListOrdersAsync()
+        {
+            var orders = await _orderService.GetAllOrdersAsync(); 
+            AnsiConsole.Clear();
+            var table = new Table();
+
+            table.AddColumn("Order ID");
+            table.AddColumn("Customer Name");
+            table.AddColumn("Order Date");
+            table.AddColumn("Total Items");
+
+            foreach (var order in orders)
+            {
+               
+                var customerName = order.Customer != null ? $"{order.Customer.FirstName} {order.Customer.LastName}" : "N/A";
+                // Summing the quantities of each OrderDetail to get Total Items
+                var totalItems = order.OrderDetails.Sum(od => od.Quantity).ToString();
+
+                table.AddRow(
+                    order.OrderId.ToString(),
+                    customerName,
+                    order.OrderDate.ToString("d"),
+                    totalItems
+                );
+            }
+
+            AnsiConsole.Write(table);
+            AnsiConsole.MarkupLine("Press any key to continue...");
+            System.Console.ReadKey();
         }
     }
+
+
 }
