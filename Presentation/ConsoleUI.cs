@@ -75,7 +75,7 @@ namespace Console.UI
                         await AddCustomerAsync();
                         break;
                     case "Update Customer":
-                        // Implementation needed
+                        await UpdateCustomerAsync();
                         break;
                     case "Delete Customer":
                         // Implementation needed
@@ -148,6 +148,44 @@ namespace Console.UI
         }
 
         // have to implement UpdateCustomerAsync, DeleteCustomerAsync etc.
+
+        private async Task UpdateCustomerAsync()
+        {
+            var customers = await _customerService.GetAllCustomersAsync();
+            AnsiConsole.Clear();
+
+            var customerDict = customers.ToDictionary(c => c.CustomerId.ToString(), c => $"{c.FirstName} {c.LastName}");
+            var customerId = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                .Title("Select a customer to update:")
+                .PageSize(10)
+                .AddChoices(customerDict.Keys));
+
+            var selectedCustomer = customers.First(c => c.CustomerId.ToString() == customerId);
+
+            //prompt for new details 
+            var firstName = AnsiConsole.Ask<string>($"Enter new first name (Current: {selectedCustomer.FirstName}):", selectedCustomer.FirstName);
+            var lastName = AnsiConsole.Ask<string>($"Enter new last name (Current: {selectedCustomer.LastName}):", selectedCustomer.LastName);
+            var email = AnsiConsole.Ask<string>($"Enter new email (Current: {selectedCustomer.Email}):", selectedCustomer.Email);
+
+            selectedCustomer.FirstName = firstName;
+            selectedCustomer.LastName = lastName;
+            selectedCustomer.Email = email;
+
+            var success = await _customerService.UpdateCustomerAsync(selectedCustomer);
+            if (success)
+            {
+                AnsiConsole.MarkupLine("[green]Customer updated successfully![/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[red]Failed to update customer.[/]");
+            }
+
+            AnsiConsole.MarkupLine("Press any key to continue...");
+            System.Console.ReadKey();
+        }
+    }
 
         private async Task ManageInventoryAsync()
         {
