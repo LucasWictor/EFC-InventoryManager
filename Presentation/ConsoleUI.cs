@@ -2,6 +2,7 @@
 using Infrastructure.Services;
 using Infrastructure.Entities;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Console.UI
 {
@@ -242,8 +243,9 @@ namespace Console.UI
                     case "Add Product":
                         await AddProductAsync();
                         break;
+      
                     case "Update Product":
-                        // Implementation needed
+                        await UpdateProductAsync();
                         break;
                     case "Delete Product":
                         // Implementation needed
@@ -312,6 +314,46 @@ namespace Console.UI
             AnsiConsole.MarkupLine("Press any key to continue...");
             System.Console.ReadKey();
         }
+
+        private async Task UpdateProductAsync()
+        {
+            var product = await _inventoryService.GetAllProductsAsync();
+            AnsiConsole.Clear();
+
+            var productDict = product.ToDictionary(p => p.ProductId.ToString(), p => $"{p.Title}");
+            var productId = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                .Title("Select a product to update:")
+                .PageSize(10)
+                .AddChoices(productDict.Keys));
+
+            var selectedProduct = product.First(p => p.ProductId.ToString() == productId);
+
+            //Prompt new product details
+            var title = AnsiConsole.Ask<string>("New title:", selectedProduct.Title);
+            var price = AnsiConsole.Ask<decimal>("New price:", selectedProduct.Price);
+            var quantityInStock = AnsiConsole.Ask<int>("New quantity in stock:", selectedProduct.QuantityInStock);
+
+            // Update product details
+            selectedProduct.Title = title;
+            selectedProduct.Price = price;
+            selectedProduct.QuantityInStock = quantityInStock;
+
+            var success = await _inventoryService.UpdateProductAsync(selectedProduct);
+            if (success)
+            {
+                AnsiConsole.MarkupLine("[green]Product updated successfully![/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[red]Failed to update product.[/]");
+            }
+
+            AnsiConsole.MarkupLine("Press any key to continue...");
+            System.Console.ReadKey();
+        }
+
+    
         //MANAGE ORDERS
 
         private async Task ManageOrdersAsync()
@@ -335,10 +377,10 @@ namespace Console.UI
                         await ListOrdersAsync();
                         break;
                     case "Create Order":
-                        //implementation needed
+                        await CreateOrderAsync();
                         break;
                     case "Update Order Status":
-                        //implementation needed
+                        await UpdateOrderStatusAsync();
                         break;
                     case "Return to Main Menu":
                         keepManagingOrders = false;
@@ -346,10 +388,9 @@ namespace Console.UI
                 }
             }
         }
-
         private async Task ListOrdersAsync()
         {
-            var orders = await _orderService.GetAllOrdersAsync(); 
+            var orders = await _orderService.GetAllOrdersAsync();
             AnsiConsole.Clear();
             var table = new Table();
 
@@ -360,7 +401,7 @@ namespace Console.UI
 
             foreach (var order in orders)
             {
-               
+
                 var customerName = order.Customer != null ? $"{order.Customer.FirstName} {order.Customer.LastName}" : "N/A";
                 // Summing the quantities of each OrderDetail to get Total Items
                 var totalItems = order.OrderDetails.Sum(od => od.Quantity).ToString();
@@ -377,7 +418,102 @@ namespace Console.UI
             AnsiConsole.MarkupLine("Press any key to continue...");
             System.Console.ReadKey();
         }
+        private async Task CreateOrderAsync()
+        {
+            AnsiConsole.MarkupLine("[yellow]Let's create a new order![/]");
+
+            // Step 1: Select a Customer
+            var customers = await _customerService.GetAllCustomersAsync();
+            var customerChoices = customers.Select(c => $"{c.FirstName} {c.LastName} (ID: {c.CustomerId})").ToList();
+            var selectedCustomerInfo = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Select a customer for the order:")
+                    .PageSize(10)
+                    .AddChoices(customerChoices));
+            var selectedCustomerId = int.Parse(selectedCustomerInfo.Split(new[] { "(ID: ", ")" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+
+            // Step 2: Choose Products (simplified to choosing one product)
+            var products = await _inventoryService.GetAllProductsAsync();
+            var productChoices = products.Select(p => $"{p.Title} (ID: {p.ProductId})").ToList();
+            var selectedProductInfo = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Select a product to add to the order:")
+                    .PageSize(10)
+                    .AddChoices(productChoices));
+            var selectedProductId = int.Parse(selectedProductInfo.Split(new[] { "(ID: ", ")" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+
+            // Step 3: Specify Quantities
+            var quantity = AnsiConsole.Ask<int>("Enter the quantity for the selected product:");
+
+           
+            // Step 4: Create the Order
+            OrderEntity newOrder = new OrderEntity
+            {
+                CustomerId = selectedCustomerId,
+                OrderDate = DateTime.Now,
+                Status = "New" // Default status
+            };
+
+            OrderDetailEntity newOrderDetail = new OrderDetailEntity
+            {
+                ProductId = selectedProductId,
+                Quantity = quantity
+            };
+            //wrap newOrderDetail in a List
+            List<OrderDetailEntity> orderDetails = new List<OrderDetailEntity> { newOrderDetail };
+            //pass orderDetails 
+            var success = await _orderService.CreateOrderAsync(newOrder, orderDetails);
+
+            if (success)
+            {
+                AnsiConsole.MarkupLine("[green]Order created successfully![/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[red]Failed to create the order.[/]");
+            }
+
+            AnsiConsole.MarkupLine("Press any key to continue...");
+            System.Console.ReadKey(); 
+        }
+
+        private async Task UpdateOrderStatusAsync()
+        {
+            AnsiConsole.MarkupLine("[yellow]Let's update an order's status![/]");
+
+            // Step 1: List all orders for selection
+            var orders = await _orderService.GetAllOrdersAsync();
+            if (!orders.Any())
+            {
+                AnsiConsole.MarkupLine("[red]No orders available to update.[/]");
+                return;
+            }
+
+            var orderChoices = orders.Select(o => $"Order ID: {o.OrderId}, Customer ID: {o.CustomerId}, Status: {o.Status}").ToList();
+            var selectedOrderInfo = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Select an order to update its status:")
+                    .PageSize(10)
+                    .AddChoices(orderChoices));
+            var selectedOrderId = int.Parse(selectedOrderInfo.Split(new[] { "Order ID: ", "," }, StringSplitOptions.RemoveEmptyEntries)[0]);
+
+            // Step 2: Enter a new status
+            var newStatus = AnsiConsole.Ask<string>("Enter the new status for the order:");
+
+            // Step 3: Update the order status
+            var success = await _orderService.UpdateOrderStatusAsync(selectedOrderId, newStatus);
+
+            if (success)
+            {
+                AnsiConsole.MarkupLine($"[green]Order ID: {selectedOrderId}'s status updated to {newStatus} successfully![/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[red]Failed to update the order status.[/]");
+            }
+
+            AnsiConsole.MarkupLine("Press any key to continue...");
+            System.Console.ReadKey();
+        }
     }
-
-
 }

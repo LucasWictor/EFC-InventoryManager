@@ -25,7 +25,37 @@ namespace Infrastructure.Repositories
                                  .ToListAsync();
         }
 
-
+        public async Task<bool> UpdateAsync(ProductEntity product)
+        {
+            if (product == null) return false;
+            try
+            {
+                _context.Products.Update(product);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (DbUpdateException /* ex */)
+            {
+                // Log the error (uncomment ex variable name and write a log.)
+                return false;
+            }
+        }
+        public async Task<bool> DeleteAsync(int productId)
+        {
+            var product = await _context.Products.FindAsync(productId);
+            if (product == null) return false;
+            try
+            {
+                _context.Products.Remove(product);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (DbUpdateException /* ex */)
+            {
+                // Log the error (uncomment ex variable name and write a log.)
+                return false;
+            }
+        }
 
     }
 }

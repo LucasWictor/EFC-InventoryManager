@@ -24,6 +24,13 @@ namespace Infrastructure.Services
         {
             return await _productRepository.CreateAsync(product);
         }
+
+        // UPDATE PRODUCT
+        public async Task<bool> UpdateProductAsync(ProductEntity product)
+        {
+
+            return await _productRepository.UpdateAsync(product);
+        }
         // UPDATE STOCK LEVEL
         public async Task<bool> UpdateStockLevelAsync(int ProductId, int quantity)
         {
@@ -34,6 +41,12 @@ namespace Infrastructure.Services
                 return await _productRepository.UpdateAsync(product);
             }
             return false;
+        }
+
+        public async Task<bool> DeleteProductAsync(int productId)
+        {
+            // Implementation depends on your repository's method for deleting
+            return await _productRepository.DeleteAsync(productId);
         }
     }
 }
