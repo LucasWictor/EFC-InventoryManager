@@ -237,10 +237,10 @@ namespace Console.UI
                 switch (inventoryAction)
                 {
                     case "List Products":
-                        // Implementation needed
+                        await ListProductsAsync();
                         break;
                     case "Add Product":
-                        // Implementation needed
+                        await AddProductAsync();
                         break;
                     case "Update Product":
                         // Implementation needed
@@ -255,6 +255,63 @@ namespace Console.UI
             }
         }
 
+        //LIST PRODUCTS
+        private async Task ListProductsAsync()
+        {
+            var products = await _inventoryService.GetAllProductsAsync(); 
+            AnsiConsole.Clear();
+            var table = new Table();
+
+            table.AddColumn("Product ID");
+            table.AddColumn("Title");
+            table.AddColumn("Price");
+            table.AddColumn("Quantity In Stock");
+
+            foreach (var product in products)
+            {
+                table.AddRow(
+                    product.ProductId.ToString(),
+                    product.Title,
+                    $"${product.Price}",
+                    product.QuantityInStock.ToString()
+                );
+            }
+
+            AnsiConsole.Write(table);
+            AnsiConsole.MarkupLine("Press any key to continue...");
+            System.Console.ReadKey();
+        }
+
+        //ADD PRODUCT 
+        private async Task AddProductAsync()
+        {
+            var title = AnsiConsole.Ask<string>("Enter the product title:");
+            var price = AnsiConsole.Ask<decimal>("Enter the product price:");
+            var quantityInStock = AnsiConsole.Ask<int>("Enter the quantity in stock:");
+            //might want to list manufacturers for selection
+            var manufacturerId = AnsiConsole.Ask<int>("Enter the Manufacturer ID:");
+
+            var product = new ProductEntity
+            {
+                Title = title,
+                Price = price,
+                QuantityInStock = quantityInStock,
+                ManufacturerId = manufacturerId // Remember to ensure logic to validate this ID
+            };
+
+            var result = await _inventoryService.AddProductAsync(product); 
+            if (result != null)
+            {
+                AnsiConsole.MarkupLine("[green]Product added successfully![/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[red]Failed to add product.[/]");
+            }
+
+            AnsiConsole.MarkupLine("Press any key to continue...");
+            System.Console.ReadKey();
+        }
         //MANAGE ORDERS
 
         private async Task ManageOrdersAsync()

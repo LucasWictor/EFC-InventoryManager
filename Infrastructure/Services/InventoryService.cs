@@ -13,13 +13,18 @@ namespace Infrastructure.Services
         {
             _productRepository = productRepository;
         }
-
+        //GET ALL
+        public async Task<IEnumerable<ProductEntity>> GetAllProductsAsync()
+        {
+            return await _productRepository.GetAllAsync();
+        }
         // Add method to include logic to check if a product already exists before adding product
+        //ADD PRODUCT
         public async Task<ProductEntity> AddProductAsync(ProductEntity product)
         {
             return await _productRepository.CreateAsync(product);
         }
-
+        // UPDATE STOCK LEVEL
         public async Task<bool> UpdateStockLevelAsync(int ProductId, int quantity)
         {
             var product = await _productRepository.GetOneAsync(p => p.ProductId == ProductId);
