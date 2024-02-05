@@ -164,8 +164,12 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ManufacturerId")
+                    b.Property<int?>("ManufactureEntityManufacturerId")
                         .HasColumnType("int");
+
+                    b.Property<string>("ManufacturerName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("money");
@@ -179,7 +183,9 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("ProductId");
 
-                    b.HasIndex("ManufacturerId");
+                    b.HasIndex("ManufactureEntityManufacturerId");
+
+                    b.HasIndex("ManufacturerName");
 
                     b.HasIndex("Title");
 
@@ -216,13 +222,9 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Infrastructure.Entities.ProductEntity", b =>
                 {
-                    b.HasOne("Infrastructure.Entities.ManufactureEntity", "Manufacturer")
+                    b.HasOne("Infrastructure.Entities.ManufactureEntity", null)
                         .WithMany("Product")
-                        .HasForeignKey("ManufacturerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Manufacturer");
+                        .HasForeignKey("ManufactureEntityManufacturerId");
                 });
 
             modelBuilder.Entity("Infrastructure.Entities.CustomerEntity", b =>

@@ -6,34 +6,44 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Console.UI;
 
-var builder = Host.CreateDefaultBuilder(args)
-    .ConfigureServices((context, services) =>
+class Program
+{
+    static async Task Main(string[] args)
     {
-    
-        
-        services.AddDbContext<DataContext>(options =>
-        options.UseSqlServer(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Projects\Inlamningsuppgift\Infrastructure\Data\MyLocalDb.mdf;Integrated Security=True;Connect Timeout=30"));
+        var builder = Host.CreateDefaultBuilder(args)
+            .ConfigureServices((context, services) =>
+            {
+                services.AddDbContext<DataContext>(options =>
+                {
+                    options.UseSqlServer(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Projects\Inlamningsuppgift\Infrastructure\Data\MyDB.mdf;Integrated Security=True;Connect Timeout=30");
 
-        //  repositories registration
-        services.AddScoped<CustomerRepository>();
-        services.AddScoped<OrderRepository>();
-        services.AddScoped<OrderDetailRepository>();
-        services.AddScoped<ProductRepository>();
+                    // Disable sensitive data logging and detailed errors
+                    options.EnableSensitiveDataLogging(false);
+                    options.EnableDetailedErrors(false);
+                });
 
-        // Services registration
-        services.AddScoped<CustomerService>();
-        services.AddScoped<InventoryService>();
-        services.AddScoped<OrderService>();
-        services.AddSingleton<ConsoleUI>();
-    });
+                //  repositories registration
+                services.AddScoped<CustomerRepository>();
+                services.AddScoped<OrderRepository>();
+                services.AddScoped<OrderDetailRepository>();
+                services.AddScoped<ProductRepository>();
 
-var app = builder.Build();
+                // Services registration
+                services.AddScoped<CustomerService>();
+                services.AddScoped<InventoryService>();
+                services.AddScoped<OrderService>();
 
-// Application start logic
+                services.AddScoped<ConsoleUI>();
+            });
 
+        var app = builder.Build();
 
-// Run the ConsoleUI async
-await app.Services.GetRequiredService<ConsoleUI>().RunAsync();
+        // Application start logic
 
-// Dispose of the host after the ConsoleUI finishes running
-app.Dispose();
+        // Run the ConsoleUI async
+        await app.Services.GetRequiredService<ConsoleUI>().RunAsync();
+
+        // Dispose of the host after the ConsoleUI finishes running
+        app.Dispose();
+    }
+}

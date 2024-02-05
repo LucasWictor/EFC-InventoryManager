@@ -36,7 +36,6 @@ namespace Infrastructure.Repositories
             }
             catch (DbUpdateException /* ex */)
             {
-                // Log the error (uncomment ex variable name and write a log.)
                 return false;
             }
         }
@@ -52,7 +51,7 @@ namespace Infrastructure.Repositories
             }
             catch (DbUpdateException /* ex */)
             {
-                // Log the error (uncomment ex variable name and write a log.)
+              
                 return false;
             }
         }

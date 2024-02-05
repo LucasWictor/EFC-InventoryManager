@@ -45,7 +45,7 @@ namespace Infrastructure.Services
 
         public async Task<bool> DeleteProductAsync(int productId)
         {
-            // Implementation depends on your repository's method for deleting
+            
             return await _productRepository.DeleteAsync(productId);
         }
     }

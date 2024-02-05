@@ -18,10 +18,10 @@ namespace Infrastructure.Entities
         public int QuantityInStock { get; set; }
         [Required]
         [ForeignKey("Manufacturer")]
-        public int ManufacturerId { get; set; }
+        public string ManufacturerName { get; set; }
         public string Description { get; set; }
 
-        public virtual ManufactureEntity Manufacturer { get; set; }
+        //public virtual ManufactureEntity Manufacturer { get; set; }
 
     }
 }

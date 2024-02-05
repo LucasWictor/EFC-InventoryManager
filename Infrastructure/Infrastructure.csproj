@@ -9,6 +9,7 @@
   <ItemGroup>
     <Folder Include="Dtos\" />
     <Folder Include="Data\" />
+    <Folder Include="Migrations\" />
   </ItemGroup>
 
   <ItemGroup>

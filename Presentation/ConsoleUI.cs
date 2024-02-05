@@ -21,6 +21,7 @@ namespace Console.UI
 
         public async Task RunAsync()
         {
+            DisplayFigletBanner("InventoryPro");
             while (true)
             {
                 var choice = AnsiConsole.Prompt(
@@ -28,10 +29,10 @@ namespace Console.UI
                         .Title("Welcome to the Inventory Management System")
                         .PageSize(10)
                         .AddChoices(new[] {
-                            "Manage Customers",
-                            "Manage Inventory",
-                            "Manage Orders",
-                            "Exit" }));
+                    "Manage Customers",
+                    "Manage Inventory",
+                    "Manage Orders",
+                    "Exit" }));
 
                 switch (choice)
                 {
@@ -49,6 +50,15 @@ namespace Console.UI
                 }
             }
         }
+
+        private void DisplayFigletBanner(string text)
+        {
+            var banner = new FigletText(text)
+               .Color(new Color(215, 95, 175));
+
+            AnsiConsole.Render(banner.Centered()); 
+        }
+
 
         //IF SELECT MANAGE CUSTOMERS 
         private async Task ManageCustomersAsync()
@@ -248,7 +258,7 @@ namespace Console.UI
                         await UpdateProductAsync();
                         break;
                     case "Delete Product":
-                        // Implementation needed
+                        await DeleteProductAsync();
                         break;
                     case "Return to Main Menu":
                         keepManagingInventory = false;
@@ -288,32 +298,43 @@ namespace Console.UI
         private async Task AddProductAsync()
         {
             var title = AnsiConsole.Ask<string>("Enter the product title:");
+            var description = AnsiConsole.Ask<string>("Enter the product description:");
             var price = AnsiConsole.Ask<decimal>("Enter the product price:");
             var quantityInStock = AnsiConsole.Ask<int>("Enter the quantity in stock:");
-            //might want to list manufacturers for selection
-            var manufacturerId = AnsiConsole.Ask<int>("Enter the Manufacturer ID:");
 
+           
+            var manufacturerName = AnsiConsole.Ask<string>("Enter the manufacturer's name (leave empty if unknown):");
+
+            // Create a new ProductEntity object with the provided information
             var product = new ProductEntity
             {
                 Title = title,
+                Description = description,
                 Price = price,
                 QuantityInStock = quantityInStock,
-                ManufacturerId = manufacturerId // Remember to ensure logic to validate this ID
+                ManufacturerName = string.IsNullOrEmpty(manufacturerName) ? null : manufacturerName // Store null if the input is empty
             };
 
-            var result = await _inventoryService.AddProductAsync(product); 
+            // Attempt to add the new product using inventory service
+            var result = await _inventoryService.AddProductAsync(product);
             if (result != null)
             {
+
                 AnsiConsole.MarkupLine("[green]Product added successfully![/]");
+                AnsiConsole.MarkupLine("[yellow]Returning to the main menu...[/]");
+                Thread.Sleep(2000);
+                AnsiConsole.Clear();
+
             }
             else
             {
                 AnsiConsole.MarkupLine("[red]Failed to add product.[/]");
             }
 
-            AnsiConsole.MarkupLine("Press any key to continue...");
-            System.Console.ReadKey();
+
+            AnsiConsole.Clear();
         }
+
 
         private async Task UpdateProductAsync()
         {
@@ -353,7 +374,54 @@ namespace Console.UI
             System.Console.ReadKey();
         }
 
-    
+        //DELETE PRODUCT
+        private async Task DeleteProductAsync()
+        {
+            AnsiConsole.MarkupLine("[yellow]Delete a product![/]");
+
+            // Fetch and list all products
+            var products = await _inventoryService.GetAllProductsAsync();
+            if (products == null || !products.Any())
+            {
+                AnsiConsole.MarkupLine("[red]No products available.[/]");
+                return;
+            }
+
+            var productChoices = products.Select(p => $"{p.Title} (ID: {p.ProductId})").ToList();
+            var selectedProductInfo = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Select a product to delete:")
+                    .PageSize(10)
+                    .AddChoices(productChoices));
+
+            var selectedProductId = int.Parse(selectedProductInfo.Split(new string[] { "(ID: " }, StringSplitOptions.RemoveEmptyEntries)[1].TrimEnd(')'));
+
+            // Confirm before deletion
+            var confirm = AnsiConsole.Confirm("Are you sure you want to delete this product?");
+            if (!confirm)
+            {
+                AnsiConsole.MarkupLine("[grey]Product deletion cancelled.[/]");
+                return;
+            }
+
+            // Attempt to delete the product
+            var success = await _inventoryService.DeleteProductAsync(selectedProductId);
+            if (success)
+            {
+
+                AnsiConsole.MarkupLine("[green]Product successfully deleted.[/]");
+                AnsiConsole.MarkupLine("[yellow]Returning to the main menu...[/]");
+                Thread.Sleep(2000);
+                AnsiConsole.Clear();
+
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[red]Failed to delete the product.[/]");
+            }
+        }
+
+
         //MANAGE ORDERS
 
         private async Task ManageOrdersAsync()
