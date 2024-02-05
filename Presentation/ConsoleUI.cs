@@ -360,7 +360,7 @@ namespace Console.UI
 
          
             AnsiConsole.MarkupLine("Press any key to return to the menu...");
-            System.Console.ReadKey(true);
+            System.Console.ReadKey();
 
             
             AnsiConsole.Clear();
@@ -375,7 +375,6 @@ namespace Console.UI
             var price = AnsiConsole.Ask<decimal>("Enter the product price:");
             var quantityInStock = AnsiConsole.Ask<int>("Enter the quantity in stock:");
 
-           
             var manufacturerName = AnsiConsole.Ask<string>("Enter the manufacturer's name (leave empty if unknown):");
             var product = new ProductEntity
             {
@@ -390,21 +389,17 @@ namespace Console.UI
             var result = await _inventoryService.AddProductAsync(product);
             if (result != null)
             {
-
                 AnsiConsole.MarkupLine("[green]Product added successfully![/]");
-                AnsiConsole.MarkupLine("[yellow]Returning to the main menu...[/]");
-                Thread.Sleep(2000);
-                AnsiConsole.Clear();
-
             }
             else
             {
                 AnsiConsole.MarkupLine("[red]Failed to add product.[/]");
             }
 
+            AnsiConsole.MarkupLine("[yellow]Returning to the main menu...[/]");
+            await Task.Delay(2000); 
 
-            AnsiConsole.MarkupLine("Press any key to return to the menu...");
-            System.Console.ReadKey(true);
+
             AnsiConsole.Clear();
             DisplayWelcomeMessage();
         }
@@ -585,6 +580,12 @@ namespace Console.UI
 
             // Step 1: Select a Customer
             var customers = await _customerService.GetAllCustomersAsync();
+            if (!customers.Any())
+            {
+                AnsiConsole.MarkupLine("[red]No customers available.[/]");
+                return; // Early return if no customers are available
+            }
+
             var customerChoices = customers.Select(c => $"{c.FirstName} {c.LastName} (ID: {c.CustomerId})").ToList();
             var selectedCustomerInfo = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
@@ -593,8 +594,14 @@ namespace Console.UI
                     .AddChoices(customerChoices));
             var selectedCustomerId = int.Parse(selectedCustomerInfo.Split(new[] { "(ID: ", ")" }, StringSplitOptions.RemoveEmptyEntries)[1]);
 
-            // Step 2: Choose Products (simplified to choosing one product)
+            // Step 2: Choose Products
             var products = await _inventoryService.GetAllProductsAsync();
+            if (!products.Any())
+            {
+                AnsiConsole.MarkupLine("[red]No products available.[/]");
+                return; // Early return if no products are available
+            }
+
             var productChoices = products.Select(p => $"{p.Title} (ID: {p.ProductId})").ToList();
             var selectedProductInfo = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
@@ -603,16 +610,26 @@ namespace Console.UI
                     .AddChoices(productChoices));
             var selectedProductId = int.Parse(selectedProductInfo.Split(new[] { "(ID: ", ")" }, StringSplitOptions.RemoveEmptyEntries)[1]);
 
-            // Step 3: Specify Quantities
+            // Step 3: Specify Quantities and check stock
+            var selectedProduct = products.FirstOrDefault(p => p.ProductId == selectedProductId);
             var quantity = AnsiConsole.Ask<int>("Enter the quantity for the selected product:");
 
-           
+            if (selectedProduct == null || selectedProduct.QuantityInStock < quantity)
+            {
+                AnsiConsole.MarkupLine("[red]Not enough stock available or product not found.[/]");
+                return; // Early return if not enough stock or product not found
+            }
+
+            // Update stock quantity
+            selectedProduct.QuantityInStock -= quantity;
+            await _inventoryService.UpdateProductAsync(selectedProduct); 
+
             // Step 4: Create the Order
             OrderEntity newOrder = new OrderEntity
             {
                 CustomerId = selectedCustomerId,
                 OrderDate = DateTime.Now,
-                Status = "New" // Default status
+                Status = "New"
             };
 
             OrderDetailEntity newOrderDetail = new OrderDetailEntity
@@ -620,9 +637,9 @@ namespace Console.UI
                 ProductId = selectedProductId,
                 Quantity = quantity
             };
-            //wrap newOrderDetail in a List
+
+            // Wrap newOrderDetail in a List and pass to create order
             List<OrderDetailEntity> orderDetails = new List<OrderDetailEntity> { newOrderDetail };
-            //pass orderDetails 
             var success = await _orderService.CreateOrderAsync(newOrder, orderDetails);
 
             if (success)
@@ -633,9 +650,10 @@ namespace Console.UI
             {
                 AnsiConsole.MarkupLine("[red]Failed to create the order.[/]");
             }
-
-            AnsiConsole.MarkupLine("Press any key to continue...");
-            System.Console.ReadKey(); 
+            AnsiConsole.MarkupLine("[yellow]Returning to main menu..![/]");
+            await Task.Delay(3000);
+            AnsiConsole.Clear();
+            DisplayWelcomeMessage();
         }
 
         private async Task UpdateOrderStatusAsync()
@@ -675,6 +693,8 @@ namespace Console.UI
 
             AnsiConsole.MarkupLine("Press any key to continue...");
             System.Console.ReadKey();
+            AnsiConsole.Clear();
+            DisplayWelcomeMessage();
         }
     }
 }
