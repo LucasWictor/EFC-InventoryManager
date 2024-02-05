@@ -3,6 +3,7 @@ using Infrastructure.Services;
 using Infrastructure.Entities;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace Console.UI
 {
@@ -22,17 +23,29 @@ namespace Console.UI
         public async Task RunAsync()
         {
             DisplayFigletBanner("InventoryPro");
+
+            
+            var welcomePanel = new Panel("[bold]Welcome to the Inventory Management System[/]")
+                .Border(BoxBorder.Double)
+                .BorderStyle(new Style(Color.LightCoral))
+                .Padding(35, 50)
+                .Expand();
+            AnsiConsole.Render(welcomePanel);
+
             while (true)
             {
                 var choice = AnsiConsole.Prompt(
-                    new SelectionPrompt<string>()
-                        .Title("Welcome to the Inventory Management System")
-                        .PageSize(10)
-                        .AddChoices(new[] {
-                    "Manage Customers",
-                    "Manage Inventory",
-                    "Manage Orders",
-                    "Exit" }));
+                 new SelectionPrompt<string>()
+                 .Title("[bold underline orange1]Please select an option:[/]")
+                 .PageSize(10)
+                 .HighlightStyle(new Style(foreground: Color.Yellow, background: Color.Black, decoration: Decoration.Invert))
+                 .AddChoices(new[] {
+                 "Manage Customers",
+                 "Manage Inventory",
+                 "Manage Orders",
+                 "Exit"}));
+
+
 
                 switch (choice)
                 {
@@ -56,7 +69,7 @@ namespace Console.UI
             var banner = new FigletText(text)
                .Color(new Color(215, 95, 175));
 
-            AnsiConsole.Render(banner.Centered()); 
+            AnsiConsole.Render(banner.Centered());
         }
 
 
