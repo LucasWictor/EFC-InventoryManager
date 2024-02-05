@@ -232,8 +232,10 @@ namespace Console.UI
                 AnsiConsole.MarkupLine("[red]Failed to update customer.[/]");
             }
 
-            AnsiConsole.MarkupLine("Press any key to continue...");
-            System.Console.ReadKey();
+            AnsiConsole.MarkupLine("Press any key to return to the menu...");
+            System.Console.ReadKey(true);
+            AnsiConsole.Clear();
+            DisplayWelcomeMessage();
         }
 
         // DELETE CUSTOMER
@@ -277,8 +279,10 @@ namespace Console.UI
                 AnsiConsole.MarkupLine("[red]Failed to delete customer.[/]");
             }
 
-            AnsiConsole.MarkupLine("Press any key to continue...");
-            System.Console.ReadKey();
+            AnsiConsole.MarkupLine("Press any key to return to the menu...");
+            System.Console.ReadKey(true);
+            AnsiConsole.Clear();
+            DisplayWelcomeMessage();
         }
 
 
@@ -324,28 +328,43 @@ namespace Console.UI
         //LIST PRODUCTS
         private async Task ListProductsAsync()
         {
-            var products = await _inventoryService.GetAllProductsAsync(); 
+            // Display the welcome message first without clearing it when showing the table
             AnsiConsole.Clear();
-            var table = new Table();
+            DisplayWelcomeMessage();
 
-            table.AddColumn("Product ID");
-            table.AddColumn("Title");
-            table.AddColumn("Price");
-            table.AddColumn("Quantity In Stock");
+            var products = await _inventoryService.GetAllProductsAsync();
 
-            foreach (var product in products)
+            if (!products.Any())
             {
-                table.AddRow(
-                    product.ProductId.ToString(),
-                    product.Title,
-                    $"${product.Price}",
-                    product.QuantityInStock.ToString()
-                );
+                AnsiConsole.MarkupLine("[red]No products available.[/]");
+            }
+            else
+            {
+                var table = new Table();
+                table.AddColumn("Product ID");
+                table.AddColumn("Title");
+                table.AddColumn("Price");
+                table.AddColumn("Quantity In Stock");
+
+                foreach (var product in products)
+                {
+                    table.AddRow(
+                        product.ProductId.ToString(),
+                        product.Title,
+                        $"${product.Price}",
+                        product.QuantityInStock.ToString()
+                    );
+                }
+                AnsiConsole.Write(table);
             }
 
-            AnsiConsole.Write(table);
-            AnsiConsole.MarkupLine("Press any key to continue...");
-            System.Console.ReadKey();
+         
+            AnsiConsole.MarkupLine("Press any key to return to the menu...");
+            System.Console.ReadKey(true);
+
+            
+            AnsiConsole.Clear();
+            DisplayWelcomeMessage();
         }
 
         //ADD PRODUCT 
@@ -358,8 +377,6 @@ namespace Console.UI
 
            
             var manufacturerName = AnsiConsole.Ask<string>("Enter the manufacturer's name (leave empty if unknown):");
-
-            // Create a new ProductEntity object with the provided information
             var product = new ProductEntity
             {
                 Title = title,
@@ -386,31 +403,46 @@ namespace Console.UI
             }
 
 
+            AnsiConsole.MarkupLine("Press any key to return to the menu...");
+            System.Console.ReadKey(true);
             AnsiConsole.Clear();
+            DisplayWelcomeMessage();
         }
 
-
+        //UPDATE PRODUCT
         private async Task UpdateProductAsync()
         {
-            var product = await _inventoryService.GetAllProductsAsync();
+            var products = await _inventoryService.GetAllProductsAsync();
             AnsiConsole.Clear();
 
-            var productDict = product.ToDictionary(p => p.ProductId.ToString(), p => $"{p.Title}");
+            if (!products.Any())
+            {
+                AnsiConsole.MarkupLine("[yellow]No products available to update.[/]");
+                AnsiConsole.MarkupLine("Press any key to return to the menu...");
+                System.Console.ReadKey(true);
+                return; // Exit the method early if no products are available
+            }
+
+            var productDict = products.ToDictionary(p => p.ProductId.ToString(), p => $"{p.Title}");
             var productId = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
-                .Title("Select a product to update:")
-                .PageSize(10)
-                .AddChoices(productDict.Keys));
+                    .Title("Select a product to update:")
+                    .PageSize(10)
+                    .AddChoices(productDict.Keys));
 
-            var selectedProduct = product.First(p => p.ProductId.ToString() == productId);
+            var selectedProduct = products.First(p => p.ProductId.ToString() == productId);
 
-            //Prompt new product details
+            // Prompt for new product details
             var title = AnsiConsole.Ask<string>("New title:", selectedProduct.Title);
+            var description = AnsiConsole.Ask<string>("New description:", selectedProduct.Description); // Add this line for description
+            var manufacturerName = AnsiConsole.Ask<string>("New manufacturer's name:", selectedProduct.ManufacturerName); // Add this line for manufacturer's name
             var price = AnsiConsole.Ask<decimal>("New price:", selectedProduct.Price);
             var quantityInStock = AnsiConsole.Ask<int>("New quantity in stock:", selectedProduct.QuantityInStock);
 
-            // Update product details
+            // Update the selected product with new details
             selectedProduct.Title = title;
+            selectedProduct.Description = description; // Update description
+            selectedProduct.ManufacturerName = manufacturerName; // Update manufacturer's name
             selectedProduct.Price = price;
             selectedProduct.QuantityInStock = quantityInStock;
 
@@ -425,7 +457,9 @@ namespace Console.UI
             }
 
             AnsiConsole.MarkupLine("Press any key to continue...");
-            System.Console.ReadKey();
+            System.Console.ReadKey(true);
+            AnsiConsole.Clear();
+            DisplayWelcomeMessage();
         }
 
         //DELETE PRODUCT
@@ -465,8 +499,9 @@ namespace Console.UI
 
                 AnsiConsole.MarkupLine("[green]Product successfully deleted.[/]");
                 AnsiConsole.MarkupLine("[yellow]Returning to the main menu...[/]");
-                Thread.Sleep(2000);
+                Thread.Sleep(1000);
                 AnsiConsole.Clear();
+                DisplayWelcomeMessage();
 
             }
             else
@@ -510,6 +545,8 @@ namespace Console.UI
                 }
             }
         }
+
+        //LIST ORDERS
         private async Task ListOrdersAsync()
         {
             var orders = await _orderService.GetAllOrdersAsync();
@@ -539,6 +576,8 @@ namespace Console.UI
             AnsiConsole.Write(table);
             AnsiConsole.MarkupLine("Press any key to continue...");
             System.Console.ReadKey();
+            AnsiConsole.Clear();
+            DisplayWelcomeMessage();
         }
         private async Task CreateOrderAsync()
         {
