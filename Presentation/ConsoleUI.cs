@@ -24,13 +24,9 @@ namespace Console.UI
         {
             DisplayFigletBanner("InventoryPro");
 
-            
-            var welcomePanel = new Panel("[bold]Welcome to the Inventory Management System[/]")
-                .Border(BoxBorder.Double)
-                .BorderStyle(new Style(Color.LightCoral))
-                .Padding(35, 50)
-                .Expand();
-            AnsiConsole.Render(welcomePanel);
+            //Welcome message styling
+            AnsiConsole.Clear();
+            DisplayWelcomeMessage();
 
             while (true)
             {
@@ -38,7 +34,7 @@ namespace Console.UI
                  new SelectionPrompt<string>()
                  .Title("[bold underline orange1]Please select an option:[/]")
                  .PageSize(10)
-                 .HighlightStyle(new Style(foreground: Color.Yellow, background: Color.Black, decoration: Decoration.Invert))
+                 
                  .AddChoices(new[] {
                  "Manage Customers",
                  "Manage Inventory",
@@ -63,7 +59,18 @@ namespace Console.UI
                 }
             }
         }
+        private void DisplayWelcomeMessage()
+        {
+            // Display the welcome message
+            DisplayFigletBanner("InventoryPro");
 
+            var welcomePanel = new Panel("[bold]Welcome to the Inventory Management System[/]")
+                .Border(BoxBorder.Double)
+                .BorderStyle(new Style(Color.Orange1))
+                .Padding(35, 50)
+                .Expand();
+            AnsiConsole.Render(welcomePanel);
+        }
         private void DisplayFigletBanner(string text)
         {
             var banner = new FigletText(text)
@@ -114,18 +121,22 @@ namespace Console.UI
         private async Task ListCustomersAsync()
         {
             // Retrieve the list of customers using the CustomerService
-            var customers = await _customerService.GetAllCustomersAsync(); 
-
-            // Clear the console and create a new table
+            var customers = await _customerService.GetAllCustomersAsync();
             AnsiConsole.Clear();
-            var table = new Table();
 
-            table.AddColumn("ID");
-            table.AddColumn("First Name");
-            table.AddColumn("Last Name");
-            table.AddColumn("Email");
-            table.AddColumn("Address");
-            table.AddColumn("Phone");
+           
+            var table = new Table()
+                .Border(TableBorder.Rounded) 
+                .BorderColor(Color.Grey) // Set border color
+                .AddColumn(new TableColumn("[u]ID[/]").Centered())
+                .AddColumn(new TableColumn("[u]First Name[/]").Centered())
+                .AddColumn(new TableColumn("[u]Last Name[/]").Centered())
+                .AddColumn(new TableColumn("[u]Email[/]").Centered())
+                .AddColumn(new TableColumn("[u]Address[/]").Centered())
+                .AddColumn(new TableColumn("[u]Phone[/]").Centered())
+                .Alignment(Justify.Center)
+                .Title("[bold yellow]Customer List[/]")
+                .Expand();
 
             foreach (var customer in customers)
             {
@@ -135,12 +146,16 @@ namespace Console.UI
                     customer.LastName,
                     customer.Email,
                     $"{customer.StreetName}, {customer.City}, {customer.PostalCode}, {customer.Country}",
-                    customer.Phone ?? "N/A" // Use "N/A" if the phone number is null
+                    customer.Phone ?? "N/A"
                 );
             }
+
+            // Render the table to the console
             AnsiConsole.Write(table);
             AnsiConsole.MarkupLine("Press any key to return to the menu...");
-            System.Console.ReadKey();
+            System.Console.ReadKey(true);
+            AnsiConsole.Clear();
+            DisplayWelcomeMessage();
         }
         //ADD A CUSTOMER
         private async Task AddCustomerAsync()
@@ -148,13 +163,22 @@ namespace Console.UI
             var firstName = AnsiConsole.Ask<string>("Enter the customer's first name:");
             var lastName = AnsiConsole.Ask<string>("Enter the customer's last name:");
             var email = AnsiConsole.Ask<string>("Enter the customer's email:");
+            var streetName = AnsiConsole.Ask<string>("Enter the customer's street name:");
+            var postalCode = AnsiConsole.Ask<string>("Enter the customer's postal code:");
+            var country = AnsiConsole.Ask<string>("Enter the customer's country:");
+            var city = AnsiConsole.Ask<string>("Enter the customer's city:");
+            // Assuming phone is optional, not asking for it here
 
             var customer = new CustomerEntity
             {
                 FirstName = firstName,
                 LastName = lastName,
                 Email = email,
-
+                StreetName = streetName,
+                PostalCode = postalCode,
+                Country = country,
+                City = city
+                // Phone is not set here, assuming it's optional
             };
 
             var result = await _customerService.CreateCustomerAsync(customer);
@@ -167,11 +191,13 @@ namespace Console.UI
                 AnsiConsole.MarkupLine("[red]Failed to create customer.[/]");
             }
 
-            AnsiConsole.MarkupLine("Press any key to continue...");
-            System.Console.ReadKey();
+            AnsiConsole.MarkupLine("Press any key to return to the menu...");
+            System.Console.ReadKey(true);
+            AnsiConsole.Clear();
+            DisplayWelcomeMessage();
         }
 
-   
+
         // UPDATE CUSTOMER
         private async Task UpdateCustomerAsync()
         {
@@ -216,26 +242,41 @@ namespace Console.UI
             var customers = await _customerService.GetAllCustomersAsync();
             AnsiConsole.Clear();
 
-            var CustomerDict = customers.ToDictionary(c => c.CustomerId.ToString(), c => $"{c.FirstName} {c.LastName}");
-            var CustomerId = AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                .Title("Select a customer to delete:")
-                .PageSize(10)
-                .AddChoices(CustomerDict.Keys));
+            // Create a dictionary to map the string representation to customer ID
+            var customerDict = customers.ToDictionary(c => $"{c.CustomerId} - {c.FirstName} {c.LastName}", c => c.CustomerId);
 
-            var confirm = AnsiConsole.Confirm($"Are you sure you want to delete this customer? This action cannot be undone.");
-            if (confirm)
+            var customerChoice = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Select a customer to delete:")
+                    .PageSize(10)
+                    .AddChoices(customerDict.Keys)); // Change to Keys for the selection
+
+            // Change here to use the key to find the value
+            var selectedCustomerId = customerDict[customerChoice];
+
+            // Check if the selected customer has associated orders
+            var hasOrders = await _orderService.CustomerHasOrdersAsync(selectedCustomerId);
+            if (hasOrders)
             {
-                var success = await _customerService.DeleteCustomerAsync(int.Parse(CustomerId));
-                if (success)
+                var deleteWithOrders = AnsiConsole.Prompt(new ConfirmationPrompt("This customer has associated orders. Do you want to delete the orders as well? (Y/N)"));
+                if (deleteWithOrders)
                 {
-                    AnsiConsole.MarkupLine("[green]Customer deleted successfully![/]");
-                }
-                else
-                {
-                    AnsiConsole.MarkupLine("[red]Failed to delete customer.[/]");
+                    // Delete the associated orders first
+                    await _orderService.DeleteOrdersByCustomerIdAsync(selectedCustomerId);
                 }
             }
+
+            // Deletes the customer
+            var success = await _customerService.DeleteCustomerAsync(selectedCustomerId);
+            if (success)
+            {
+                AnsiConsole.MarkupLine($"[green]Customer '{customers.First(c => c.CustomerId == selectedCustomerId).FirstName} {customers.First(c => c.CustomerId == selectedCustomerId).LastName}' deleted successfully![/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[red]Failed to delete customer.[/]");
+            }
+
             AnsiConsole.MarkupLine("Press any key to continue...");
             System.Console.ReadKey();
         }

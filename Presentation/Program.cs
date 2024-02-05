@@ -16,13 +16,9 @@ class Program
                 services.AddDbContext<DataContext>(options =>
                 {
                     options.UseSqlServer(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Projects\Inlamningsuppgift\Infrastructure\Data\MyDB.mdf;Integrated Security=True;Connect Timeout=30");
-
-                    // Disable sensitive data logging and detailed errors
-                    options.EnableSensitiveDataLogging(false);
-                    options.EnableDetailedErrors(false);
                 });
 
-                //  repositories registration
+                // Repositories registration
                 services.AddScoped<CustomerRepository>();
                 services.AddScoped<OrderRepository>();
                 services.AddScoped<OrderDetailRepository>();
@@ -37,8 +33,6 @@ class Program
             });
 
         var app = builder.Build();
-
-        // Application start logic
 
         // Run the ConsoleUI async
         await app.Services.GetRequiredService<ConsoleUI>().RunAsync();
