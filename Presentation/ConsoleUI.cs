@@ -4,6 +4,7 @@ using Infrastructure.Entities;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Reflection;
+using Microsoft.EntityFrameworkCore;
 
 namespace Console.UI
 {
@@ -23,8 +24,6 @@ namespace Console.UI
         public async Task RunAsync()
         {
             DisplayFigletBanner("InventoryPro");
-
-            //Welcome message styling
             AnsiConsole.Clear();
             DisplayWelcomeMessage();
 
@@ -167,7 +166,7 @@ namespace Console.UI
             var postalCode = AnsiConsole.Ask<string>("Enter the customer's postal code:");
             var country = AnsiConsole.Ask<string>("Enter the customer's country:");
             var city = AnsiConsole.Ask<string>("Enter the customer's city:");
-            // Assuming phone is optional, not asking for it here
+            //phone not set
 
             var customer = new CustomerEntity
             {
@@ -178,7 +177,7 @@ namespace Console.UI
                 PostalCode = postalCode,
                 Country = country,
                 City = city
-                // Phone is not set here, assuming it's optional
+                // Phone not set
             };
 
             var result = await _customerService.CreateCustomerAsync(customer);
@@ -251,7 +250,7 @@ namespace Console.UI
                 new SelectionPrompt<string>()
                     .Title("Select a customer to delete:")
                     .PageSize(10)
-                    .AddChoices(customerDict.Keys)); // Change to Keys for the selection
+                    .AddChoices(customerDict.Keys)); 
 
             // Change here to use the key to find the value
             var selectedCustomerId = customerDict[customerChoice];
@@ -328,7 +327,6 @@ namespace Console.UI
         //LIST PRODUCTS
         private async Task ListProductsAsync()
         {
-            // Display the welcome message first without clearing it when showing the table
             AnsiConsole.Clear();
             DisplayWelcomeMessage();
 
@@ -345,27 +343,31 @@ namespace Console.UI
                 table.AddColumn("Title");
                 table.AddColumn("Price");
                 table.AddColumn("Quantity In Stock");
+                table.AddColumn("Manufacturer");
 
                 foreach (var product in products)
                 {
+                    // Get manufacturer information for the product
+                    var manufacturerName = product.ManufacturerName ?? "Unknown";
+
                     table.AddRow(
                         product.ProductId.ToString(),
                         product.Title,
                         $"${product.Price}",
-                        product.QuantityInStock.ToString()
+                        product.QuantityInStock.ToString(),
+                        manufacturerName
                     );
                 }
                 AnsiConsole.Write(table);
             }
 
-         
             AnsiConsole.MarkupLine("Press any key to return to the menu...");
             System.Console.ReadKey();
 
-            
             AnsiConsole.Clear();
             DisplayWelcomeMessage();
         }
+
 
         //ADD PRODUCT 
         private async Task AddProductAsync()
@@ -374,31 +376,39 @@ namespace Console.UI
             var description = AnsiConsole.Ask<string>("Enter the product description:");
             var price = AnsiConsole.Ask<decimal>("Enter the product price:");
             var quantityInStock = AnsiConsole.Ask<int>("Enter the quantity in stock:");
-
             var manufacturerName = AnsiConsole.Ask<string>("Enter the manufacturer's name (leave empty if unknown):");
+
+            // Make sures the manufacturer exists before proceeding
+            var manufacturer = await _inventoryService.EnsureManufacturerExists(manufacturerName);
+            if (manufacturer == null)
+            {
+                AnsiConsole.MarkupLine("[red]Failed to ensure manufacturer exists. Manufacturer name is required.[/]");
+                return;
+            }
+
+            // Create the product entity with the obtained manufacturer information
             var product = new ProductEntity
             {
                 Title = title,
                 Description = description,
                 Price = price,
                 QuantityInStock = quantityInStock,
-                ManufacturerName = string.IsNullOrEmpty(manufacturerName) ? null : manufacturerName // Store null if the input is empty
+                ManufacturerName = manufacturerName 
             };
 
-            // Attempt to add the new product using inventory service
+            // Attempt to add the new product by InventoryService
             var result = await _inventoryService.AddProductAsync(product);
             if (result != null)
             {
-                AnsiConsole.MarkupLine("[green]Product added successfully![/]");
+                AnsiConsole.MarkupLine($"[green]Product '{title}' added successfully![/]");
             }
             else
             {
                 AnsiConsole.MarkupLine("[red]Failed to add product.[/]");
             }
 
-            AnsiConsole.MarkupLine("[yellow]Returning to the main menu...[/]");
-            await Task.Delay(2000); 
-
+            AnsiConsole.MarkupLine("Press any key to return to the menu...");
+            System.Console.ReadKey(true);
 
             AnsiConsole.Clear();
             DisplayWelcomeMessage();
@@ -407,48 +417,76 @@ namespace Console.UI
         //UPDATE PRODUCT
         private async Task UpdateProductAsync()
         {
-            var products = await _inventoryService.GetAllProductsAsync();
-            AnsiConsole.Clear();
-
-            if (!products.Any())
+            try
             {
-                AnsiConsole.MarkupLine("[yellow]No products available to update.[/]");
-                AnsiConsole.MarkupLine("Press any key to return to the menu...");
-                System.Console.ReadKey(true);
-                return; // Exit the method early if no products are available
+                var products = await _inventoryService.GetAllProductsAsync();
+                AnsiConsole.Clear();
+
+                if (!products.Any())
+                {
+                    AnsiConsole.MarkupLine("[yellow]No products available to update.[/]");
+                    AnsiConsole.MarkupLine("Press any key to return to the menu...");
+                    System.Console.ReadKey(true);
+                    return;
+                }
+
+                var productDict = products.ToDictionary(p => p.ProductId.ToString(), p => $"{p.Title}");
+                var productId = AnsiConsole.Prompt(
+                    new SelectionPrompt<string>()
+                        .Title("Select a product to update:")
+                        .PageSize(10)
+                        .AddChoices(productDict.Keys));
+
+                var selectedProduct = products.FirstOrDefault(p => p.ProductId.ToString() == productId);
+
+                if (selectedProduct == null)
+                {
+                    AnsiConsole.MarkupLine("[red]Selected product not found.[/]");
+                    return;
+                }
+
+                var title = AnsiConsole.Ask<string>("New title:", selectedProduct.Title);
+                var description = AnsiConsole.Ask<string>("New description:", selectedProduct.Description);
+                var price = AnsiConsole.Ask<decimal>("New price:", selectedProduct.Price);
+                var quantityInStock = AnsiConsole.Ask<int>("New quantity in stock:", selectedProduct.QuantityInStock);
+
+                var newManufacturerName = AnsiConsole.Ask<string>($"New manufacturer's name (Current: {selectedProduct.Manufacturer?.ManufacturerName ?? "Unknown"}):");
+
+                // Update the selected product with new details
+                selectedProduct.Title = title;
+                selectedProduct.Description = description;
+                selectedProduct.Price = price;
+                selectedProduct.QuantityInStock = quantityInStock;
+
+                // Update the manufacturer ID if a new manufacturer name is provided
+                if (!string.IsNullOrEmpty(newManufacturerName))
+                {
+                    // Find the manufacturer entity by name
+                    var manufacturer = await _inventoryService.FindManufacturerByNameAsync(newManufacturerName);
+                    if (manufacturer != null)
+                    {
+                        selectedProduct.ManufacturerId = manufacturer.ManufacturerId;
+                    }
+                    else
+                    {
+                        AnsiConsole.MarkupLine("[red]Manufacturer not found. Please make sure the manufacturer exists.[/]");
+                        return;
+                    }
+                }
+
+                var success = await _inventoryService.UpdateProductAsync(selectedProduct);
+                if (success)
+                {
+                    AnsiConsole.MarkupLine("[green]Product updated successfully![/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[red]Failed to update product.[/]");
+                }
             }
-
-            var productDict = products.ToDictionary(p => p.ProductId.ToString(), p => $"{p.Title}");
-            var productId = AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .Title("Select a product to update:")
-                    .PageSize(10)
-                    .AddChoices(productDict.Keys));
-
-            var selectedProduct = products.First(p => p.ProductId.ToString() == productId);
-
-            // Prompt for new product details
-            var title = AnsiConsole.Ask<string>("New title:", selectedProduct.Title);
-            var description = AnsiConsole.Ask<string>("New description:", selectedProduct.Description); // Add this line for description
-            var manufacturerName = AnsiConsole.Ask<string>("New manufacturer's name:", selectedProduct.ManufacturerName); // Add this line for manufacturer's name
-            var price = AnsiConsole.Ask<decimal>("New price:", selectedProduct.Price);
-            var quantityInStock = AnsiConsole.Ask<int>("New quantity in stock:", selectedProduct.QuantityInStock);
-
-            // Update the selected product with new details
-            selectedProduct.Title = title;
-            selectedProduct.Description = description; // Update description
-            selectedProduct.ManufacturerName = manufacturerName; // Update manufacturer's name
-            selectedProduct.Price = price;
-            selectedProduct.QuantityInStock = quantityInStock;
-
-            var success = await _inventoryService.UpdateProductAsync(selectedProduct);
-            if (success)
+            catch (Exception ex)
             {
-                AnsiConsole.MarkupLine("[green]Product updated successfully![/]");
-            }
-            else
-            {
-                AnsiConsole.MarkupLine("[red]Failed to update product.[/]");
+                AnsiConsole.MarkupLine($"[red]An error occurred while updating the product: {ex.Message}[/]");
             }
 
             AnsiConsole.MarkupLine("Press any key to continue...");
@@ -583,7 +621,7 @@ namespace Console.UI
             if (!customers.Any())
             {
                 AnsiConsole.MarkupLine("[red]No customers available.[/]");
-                return; // Early return if no customers are available
+                return; 
             }
 
             var customerChoices = customers.Select(c => $"{c.FirstName} {c.LastName} (ID: {c.CustomerId})").ToList();
@@ -599,7 +637,7 @@ namespace Console.UI
             if (!products.Any())
             {
                 AnsiConsole.MarkupLine("[red]No products available.[/]");
-                return; // Early return if no products are available
+                return; 
             }
 
             var productChoices = products.Select(p => $"{p.Title} (ID: {p.ProductId})").ToList();
@@ -617,7 +655,7 @@ namespace Console.UI
             if (selectedProduct == null || selectedProduct.QuantityInStock < quantity)
             {
                 AnsiConsole.MarkupLine("[red]Not enough stock available or product not found.[/]");
-                return; // Early return if not enough stock or product not found
+                return; 
             }
 
             // Update stock quantity

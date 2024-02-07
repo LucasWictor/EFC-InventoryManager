@@ -37,7 +37,7 @@ namespace Infrastructure.Services
             }
             catch (Exception ex)
             {
-                //log the exception 
+              
                 Console.WriteLine($"An error occurred: {ex.Message}");
                 return false;
             }
@@ -52,7 +52,7 @@ namespace Infrastructure.Services
             }
             catch (Exception ex)
             {
-                //log the exception 
+                 
                 Console.WriteLine($"An error occurred: {ex.Message}");
                 return false;
             }
@@ -66,7 +66,7 @@ namespace Infrastructure.Services
             }
             catch (Exception ex)
             {
-                //log the exception 
+             
                 Console.WriteLine($"An error occurred: {ex.Message}");
                 return Enumerable.Empty<OrderEntity>();
             }
@@ -98,7 +98,7 @@ namespace Infrastructure.Services
             }
             catch (Exception ex)
             {
-                //log the exception 
+            
                 Console.WriteLine($"An error occurred: {ex.Message}");
                 return false;
             }
@@ -119,7 +119,7 @@ namespace Infrastructure.Services
             }
             catch (Exception ex)
             {
-                //log the exception 
+            
                 Console.WriteLine($"An error occurred: {ex.Message}");
                 return false;
             }

@@ -15,7 +15,7 @@ class Program
             {
                 services.AddDbContext<DataContext>(options =>
                 {
-                    options.UseSqlServer(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Projects\Inlamningsuppgift\Infrastructure\Data\MyDB.mdf;Integrated Security=True;Connect Timeout=30");
+                    options.UseSqlServer(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Projects\Inlamningsuppgift\Infrastructure\Data\LocalDatabase.mdf;Integrated Security=True;Connect Timeout=30");
                 });
 
                 // Repositories registration

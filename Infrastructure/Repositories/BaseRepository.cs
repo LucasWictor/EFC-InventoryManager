@@ -38,11 +38,10 @@ namespace Infrastructure.Repositories
             {
                 return await _context.Set<TEntity>().ToListAsync();
             }
-            
             catch (Exception ex)
             {
-                Debug.WriteLine("ERROR :: " +  ex.Message);
-                return null;
+                Debug.WriteLine("ERROR :: " + ex.Message);
+                return new List<TEntity>(); // Return an empty list
             }
         }
 

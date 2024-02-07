@@ -9,7 +9,7 @@ namespace Infrastructure.Contexts
         public DataContext(DbContextOptions<DataContext> options) : base(options) { }
 
         public virtual DbSet<CustomerEntity> Customers { get; set; }
-        public virtual DbSet<ManufactureEntity> Manufacturers { get; set; }
+        public virtual DbSet<ManufacturerEntity> Manufacturers { get; set; }
         public virtual DbSet<OrderDetailEntity> OrderDetails { get; set; }
         public virtual DbSet<OrderEntity> Order { get; set; }
         public virtual DbSet<ProductEntity> Products { get; set; }
@@ -38,8 +38,8 @@ namespace Infrastructure.Contexts
             modelBuilder.Entity<ProductEntity>()
                 .HasIndex(p => p.Title);
 
-            modelBuilder.Entity<ProductEntity>()
-               .HasIndex(p => p.ManufacturerName);
+            //modelBuilder.Entity<ProductEntity>()
+               //.HasIndex(p => p.ManufacturerName);
         }
     }
 }

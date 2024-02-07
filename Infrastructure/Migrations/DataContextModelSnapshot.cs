@@ -76,31 +76,6 @@ namespace Infrastructure.Migrations
                     b.ToTable("Customers");
                 });
 
-            modelBuilder.Entity("Infrastructure.Entities.ManufactureEntity", b =>
-                {
-                    b.Property<int>("ManufacturerId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ManufacturerId"));
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Contactinfo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("ManufacturerId");
-
-                    b.ToTable("Manufacturers");
-                });
-
             modelBuilder.Entity("Infrastructure.Entities.OrderDetailEntity", b =>
                 {
                     b.Property<int>("OrderDetailId")
@@ -152,7 +127,32 @@ namespace Infrastructure.Migrations
                     b.ToTable("Order");
                 });
 
-            modelBuilder.Entity("Infrastructure.Entities.ProductEntity", b =>
+            modelBuilder.Entity("ManufacturerEntity", b =>
+                {
+                    b.Property<int>("ManufacturerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ManufacturerId"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ContactInfo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ManufacturerName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ManufacturerId");
+
+                    b.ToTable("Manufacturers");
+                });
+
+            modelBuilder.Entity("ProductEntity", b =>
                 {
                     b.Property<int>("ProductId")
                         .ValueGeneratedOnAdd()
@@ -164,12 +164,11 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("ManufactureEntityManufacturerId")
+                    b.Property<int?>("ManufacturerId")
                         .HasColumnType("int");
 
                     b.Property<string>("ManufacturerName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("money");
@@ -183,9 +182,7 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("ProductId");
 
-                    b.HasIndex("ManufactureEntityManufacturerId");
-
-                    b.HasIndex("ManufacturerName");
+                    b.HasIndex("ManufacturerId");
 
                     b.HasIndex("Title");
 
@@ -200,7 +197,7 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Infrastructure.Entities.ProductEntity", "Product")
+                    b.HasOne("ProductEntity", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -220,11 +217,13 @@ namespace Infrastructure.Migrations
                     b.Navigation("Customer");
                 });
 
-            modelBuilder.Entity("Infrastructure.Entities.ProductEntity", b =>
+            modelBuilder.Entity("ProductEntity", b =>
                 {
-                    b.HasOne("Infrastructure.Entities.ManufactureEntity", null)
-                        .WithMany("Product")
-                        .HasForeignKey("ManufactureEntityManufacturerId");
+                    b.HasOne("ManufacturerEntity", "Manufacturer")
+                        .WithMany("Products")
+                        .HasForeignKey("ManufacturerId");
+
+                    b.Navigation("Manufacturer");
                 });
 
             modelBuilder.Entity("Infrastructure.Entities.CustomerEntity", b =>
@@ -232,14 +231,14 @@ namespace Infrastructure.Migrations
                     b.Navigation("Orders");
                 });
 
-            modelBuilder.Entity("Infrastructure.Entities.ManufactureEntity", b =>
-                {
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("Infrastructure.Entities.OrderEntity", b =>
                 {
                     b.Navigation("OrderDetails");
+                });
+
+            modelBuilder.Entity("ManufacturerEntity", b =>
+                {
+                    b.Navigation("Products");
                 });
 #pragma warning restore 612, 618
         }

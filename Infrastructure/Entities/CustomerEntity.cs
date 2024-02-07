@@ -1,5 +1,4 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Infrastructure.Entities
 {
@@ -26,6 +25,7 @@ namespace Infrastructure.Entities
         [Required]
         [StringLength(50)]
         public string Country { get; set; }
+
         [Required]
         [StringLength(50)]
         public string City { get; set; }
